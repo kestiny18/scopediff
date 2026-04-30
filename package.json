@@ -1,0 +1,59 @@
+{
+  "name": "@scopediff-dev/cli",
+  "version": "0.1.0",
+  "description": "Local-first CLI that checks whether AI-generated code changes stay within task scope.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kestiny18/scopediff.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kestiny18/scopediff/issues"
+  },
+  "homepage": "https://github.com/kestiny18/scopediff#readme",
+  "bin": {
+    "scopediff": "dist/cli/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "README.md",
+    "SPEC.md",
+    "scopediff.yml"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "check": "npm run build && npm test"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "code-review",
+    "diff",
+    "git",
+    "scope"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "picocolors": "^1.1.1",
+    "picomatch": "^4.0.3",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "@types/picomatch": "^4.0.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
