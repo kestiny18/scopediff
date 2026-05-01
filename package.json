@@ -1,6 +1,6 @@
 {
   "name": "@scopediff-dev/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first CLI that checks whether AI-generated code changes stay within task scope.",
   "type": "module",
   "repository": {
