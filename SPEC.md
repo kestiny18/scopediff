@@ -2,7 +2,8 @@
 
 ## Product Definition
 
-ScopeDiff is a local-first CLI that checks whether AI-generated code changes stay within task scope.
+ScopeDiff is a local-first CLI that checks whether AI-generated code
+changes stay within task scope.
 
 Code review tools ask: "Is this code good?"
 
@@ -20,7 +21,8 @@ ScopeDiff v0.1 is not:
 - a web SaaS
 - an enterprise governance platform
 
-It only checks whether AI-generated diffs contain obvious scope drift or high-risk changes.
+It only checks whether AI-generated diffs contain obvious scope drift or
+high-risk changes.
 
 ## v0.1 Scope
 
@@ -76,11 +78,13 @@ Enabled when no task context is available:
 scopediff check
 ```
 
-Risk Mode only checks high-risk diff patterns. It does not perform task-scope judgment.
+Risk Mode only checks high-risk diff patterns. It does not perform task-scope
+judgment.
 
 ## CLI
 
-The npm package is published as `@scopediff-dev/cli` because the bare `scopediff` package name is already occupied. The installed binary remains:
+The npm package is published as `@scopediff-dev/cli` because the bare
+`scopediff` package name is already occupied. The installed binary remains:
 
 ```bash
 scopediff
@@ -175,7 +179,9 @@ Supported v0.1 fields:
 | SD017 | Test added/updated | no | INFO | no |
 | SD018 | Docs-only change | no | INFO | no |
 
-HIGH findings should be reserved for high-confidence risk. MEDIUM findings should use review-oriented wording such as "Potential scope drift" and "Please review."
+HIGH findings should be reserved for high-confidence risk. MEDIUM findings
+should use review-oriented wording such as "Potential scope drift" and
+"Please review."
 
 ## Context Resolution
 
@@ -194,7 +200,8 @@ Context confidence:
 - `low`: too short or broad
 - `none`: no context
 
-v0.1 supports a small English and Chinese keyword map for auth, payment, database, dependency, CI, and docs tasks.
+v0.1 supports a small English and Chinese keyword map for auth, payment,
+database, dependency, CI, and docs tasks.
 
 ## Output
 
@@ -246,7 +253,8 @@ v0.1 supports:
 - Codex via `AGENTS.md`
 - Claude Code via `CLAUDE.md`
 
-Agent instructions ask coding agents to run ScopeDiff before finishing a task and to address HIGH findings before finalizing.
+Agent instructions ask coding agents to run ScopeDiff before finishing a task
+and to address HIGH findings before finalizing.
 
 ## Demo Cases
 
@@ -313,7 +321,8 @@ Expected:
 
 ScopeDiff runs locally by default.
 
-Your code, diffs, and task context are not uploaded. No API key is required. No LLM is used in v0.1.
+Your code, diffs, and task context are not uploaded. No API key is required. No
+LLM is used in v0.1.
 
 ## Roadmap
 

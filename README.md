@@ -82,6 +82,47 @@ Or:
 scopediff check --prompt-file task.md
 ```
 
+Example output:
+
+```text
+ScopeDiff Report
+
+Mode:
+  scope
+
+Context:
+  source: prompt
+  confidence: high
+  summary: fix login empty password returns 400
+
+Diff:
+  source: git diff HEAD
+  tip: This check includes all tracked changes relative to HEAD. Use --staged to check only selected files.
+
+Summary:
+  1 high, 1 medium, 1 info
+  4 files, 127 changed lines
+
+High Risk:
+  [SD001] Dependency/build file changed without task mention
+  file: package.json
+  reason: Build/dependency file changed, but task context does not mention dependency, package, build, or upgrade.
+  blocking: true
+
+Potential Scope Drift:
+  [SD008] Potential scope drift: file may be outside task scope
+  file: src/payment/PaymentService.ts
+  reason: Task context mentions auth, but this file appears related to payment.
+
+Info:
+  [SD017] Test added/updated
+  file: src/auth/LoginController.test.ts
+  reason: Test changes are allowed and should be reviewed with the related implementation.
+
+Result:
+  failed because 1 blocking finding(s) were found.
+```
+
 ## Risk Mode
 
 When no task context is found, ScopeDiff switches to risk-only mode:
