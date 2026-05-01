@@ -92,6 +92,27 @@ describe("runCheck", () => {
     expect(parsed.summary.changedFiles).toBe(1);
     expect(parsed.result.passed).toBe(true);
   });
+
+  it("explains default diff scope when multiple tracked files changed", () => {
+    const cwd = createRepo({
+      "SPEC.md": "# Spec\n",
+      "package.json": "{\"version\":\"0.0.1\"}\n"
+    });
+    writeFileSync(path.join(cwd, "SPEC.md"), "# Spec\n\nUpdated.\n", "utf8");
+    writeFileSync(path.join(cwd, "package.json"), "{\"version\":\"0.0.2\"}\n", "utf8");
+
+    const { exitCode, output } = captureStdout(() =>
+      runCheck(cwd, {
+        prompt: "Reformat SPEC.md into normal multi-line Markdown",
+        color: false
+      })
+    );
+
+    expect(exitCode).toBe(1);
+    expect(output).toContain("source: git diff HEAD");
+    expect(output).toContain("Use --staged to check only selected files");
+    expect(output).toContain("[SD001] Dependency/build file changed without task mention");
+  });
 });
 
 function createRepo(files: Record<string, string>): string {

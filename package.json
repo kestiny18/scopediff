@@ -34,9 +34,13 @@
     "ai",
     "cli",
     "code-review",
+    "coding-agent",
+    "codex",
+    "cursor",
     "diff",
     "git",
-    "scope"
+    "scope",
+    "claude-code"
   ],
   "license": "MIT",
   "engines": {

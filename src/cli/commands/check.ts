@@ -46,11 +46,27 @@ export function runCheck(cwd: string, options: CheckCommandOptions): number {
       ? jsonReporter(result)
       : textReporter(result, {
           color: options.color,
-          verbose: options.verbose
+          verbose: options.verbose,
+          diffSource: describeDiffSource(options),
+          showIsolationTip: shouldShowIsolationTip(options, result.summary.changedFiles)
         });
 
   process.stdout.write(report);
   return result.result.exitCode;
+}
+
+function describeDiffSource(options: CheckCommandOptions): string {
+  if (options.staged) {
+    return "git diff --staged";
+  }
+  if (options.base) {
+    return `git diff ${options.base}...HEAD`;
+  }
+  return "git diff HEAD";
+}
+
+function shouldShowIsolationTip(options: CheckCommandOptions, changedFiles: number): boolean {
+  return !options.staged && !options.base && changedFiles > 1;
 }
 
 function failOnThreshold(level: Severity): Severity[] {

@@ -4,6 +4,8 @@ import type { AnalysisResult, Finding } from "../../types/index.js";
 export type TextReporterOptions = {
   color?: boolean;
   verbose?: boolean;
+  diffSource?: string;
+  showIsolationTip?: boolean;
 };
 
 export function textReporter(result: AnalysisResult, options: TextReporterOptions = {}): string {
@@ -26,6 +28,16 @@ export function textReporter(result: AnalysisResult, options: TextReporterOption
   }
   if (options.verbose && result.context.keywords.length > 0) {
     lines.push(`  keywords: ${result.context.keywords.join(", ")}`);
+  }
+  if (options.diffSource) {
+    lines.push("");
+    lines.push("Diff:");
+    lines.push(`  source: ${options.diffSource}`);
+    if (options.showIsolationTip) {
+      lines.push(
+        "  tip: This check includes all tracked changes relative to HEAD. Use --staged to check only selected files."
+      );
+    }
   }
   lines.push("");
   lines.push("Summary:");
