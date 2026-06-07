@@ -2,9 +2,9 @@
 
 Let AI write code without letting it rewrite your project.
 
-ScopeDiff checks whether AI-generated code changes stay within the intended task scope.
-
-It runs locally, requires no API key, and works with Cursor, Codex, Claude Code, and other AI coding workflows.
+ScopeDiff reports when AI-generated code changes drift outside the scope a task
+declared. It runs locally, requires no API key, and works with Cursor, Codex,
+Claude Code, and other AI coding workflows.
 
 Most AI code review tools ask:
 
@@ -14,75 +14,40 @@ ScopeDiff asks:
 
 > Was this code supposed to change?
 
+## How it answers that
+
+ScopeDiff does **not** try to guess your intent from a prompt. Instead, the task
+declares its scope up front — the paths it expects to touch — and ScopeDiff
+compares the actual diff against that declaration. It is an **attention router**:
+it points you (or your agent) at the few changes that fall outside the declared
+scope, and gets out of the way for everything that's in scope.
+
+Its guiding principle is **trust over coverage**: only high-confidence facts
+(an undeclared dependency/lockfile/migration/CI/secret change) ever *block*.
+Fuzzy, inferred findings are surfaced for review but never block.
+
 ## Why ScopeDiff
 
-AI coding agents are useful, but they can drift: touching unrelated modules, changing dependencies, deleting tests, or rewriting build files while solving a narrow task.
+AI coding agents are useful, but they drift: touching unrelated modules,
+changing dependencies, deleting tests, or rewriting build files while solving a
+narrow task. ScopeDiff catches that drift before you finish a task or open a PR.
 
-ScopeDiff is a small local CLI for catching obvious scope drift before you finish a task or open a pull request.
+## Declared scope (recommended)
 
-## What It Checks
-
-ScopeDiff v0.1 focuses on local rule-based checks:
-
-- dependency, build, lockfile, migration, CI, and env file changes
-- test deletion and large production-code deletion
-- out-of-scope module changes based on task context
-- cross-domain diffs, large diffs, and too many changed files
-- docs-only and test-update informational findings
-
-## What It Is Not
-
-ScopeDiff v0.1 is not an AI code review tool, bug detector, security scanner, auto-fixer, PR bot, web SaaS, or enterprise governance platform.
-
-It only asks whether a diff appears to stay within the intended task scope.
-
-## Installation
+At the start of a task, declare what it should touch:
 
 ```bash
-npm install -g @scopediff-dev/cli
+scopediff intent --task "fix login empty password returns 400" --allow "src/auth/**"
 ```
 
-Or run without installing:
-
-```bash
-npx @scopediff-dev/cli check
-```
-
-## Quick Start
-
-Check the current unstaged git diff:
+This writes `.scopediff/intent.json`. Then, after changes, check the diff:
 
 ```bash
 scopediff check
 ```
 
-Check staged changes:
-
-```bash
-scopediff check --staged
-```
-
-Compare with a base ref:
-
-```bash
-scopediff check --base main
-```
-
-## Scope Mode
-
-When you provide task context, ScopeDiff checks whether changed files appear related to the task:
-
-```bash
-scopediff check --prompt "fix login empty password returns 400"
-```
-
-Or:
-
-```bash
-scopediff check --prompt-file task.md
-```
-
-Example output:
+Example output (declared `src/auth/**`, but the diff also touched `package.json`
+and `src/payment/`):
 
 ```text
 ScopeDiff Report
@@ -90,52 +55,59 @@ ScopeDiff Report
 Mode:
   scope
 
-Context:
-  source: prompt
-  confidence: high
-  summary: fix login empty password returns 400
-
-Diff:
-  source: git diff HEAD
-  tip: This check includes all tracked changes relative to HEAD. Use --staged to check only selected files.
+Declared scope:
+  task: fix login empty password returns 400
+  allow: src/auth/**
 
 Summary:
-  1 high, 1 medium, 1 info
-  4 files, 127 changed lines
+  1 high, 1 medium, 0 info
+  3 files, 6 changed lines
 
 High Risk:
-  [SD001] Dependency/build file changed without task mention
+  [SD019] High-risk file changed outside declared scope
   file: package.json
-  reason: Build/dependency file changed, but task context does not mention dependency, package, build, or upgrade.
+  reason: This file was changed but is not covered by the declared scope (src/auth/**). High-risk files require an explicit declaration.
   blocking: true
 
 Potential Scope Drift:
-  [SD008] Potential scope drift: file may be outside task scope
+  [SD019] Potential scope drift: file changed outside declared scope
   file: src/payment/PaymentService.ts
-  reason: Task context mentions auth, but this file appears related to payment.
-
-Info:
-  [SD017] Test added/updated
-  file: src/auth/LoginController.test.ts
-  reason: Test changes are allowed and should be reviewed with the related implementation.
+  reason: This file was changed but is not covered by the declared scope (src/auth/**). Please review whether it belongs in this task.
 
 Result:
   failed because 1 blocking finding(s) were found.
 ```
 
-## Risk Mode
+Files inside the declared scope (and test files) stay silent. An undeclared
+high-risk file blocks; an undeclared ordinary source file is a non-blocking
+review note; an undeclared docs file is informational.
 
-When no task context is found, ScopeDiff switches to risk-only mode:
+## Without a declaration
+
+If there is no `.scopediff/intent.json`, ScopeDiff degrades gracefully:
+
+- **Deterministic danger tripwires still fire on fact** — env/secret changes,
+  test deletion, and large deletions are flagged regardless of scope.
+- **Keyword heuristics become a best-effort fallback** — it guesses task domains
+  from a prompt or branch name. These findings are review hints and **never
+  block**.
+
+You can still pass context explicitly:
 
 ```bash
-scopediff check
+scopediff check --prompt "fix login empty password returns 400"
+scopediff check --prompt-file task.md
 ```
 
-Risk Mode does not judge task scope. It only flags high-risk diff patterns.
+## Diff source
 
-## Agent Workflows
+```bash
+scopediff check            # git diff HEAD (all tracked changes)
+scopediff check --staged   # git diff --staged
+scopediff check --base main # git diff main...HEAD
+```
 
-Generate agent instructions:
+## Agent workflows
 
 ```bash
 scopediff init cursor
@@ -143,34 +115,43 @@ scopediff init codex
 scopediff init claude
 ```
 
-These commands add ScopeDiff checks to:
+Execution differs by tool, and ScopeDiff is honest about it:
 
-- `.cursor/rules/scopediff.mdc`
-- `AGENTS.md`
-- `CLAUDE.md`
+| Tool | Enforcement | How |
+| --- | --- | --- |
+| **Claude Code** | **Hard** | `init claude` installs a `Stop` hook (`scopediff check --hook`) that runs automatically before the agent finishes and sends it back on blocking findings. Merged into `.claude/settings.json`. |
+| **Cursor** | Soft (best-effort) | `.cursor/rules/scopediff.mdc` asks the agent to declare scope and check. The agent may skip it. |
+| **Codex** | Soft (best-effort) | `AGENTS.md` asks the agent to declare scope and check. The agent may skip it. |
+
+> Deterministic post-turn hooks for Cursor and Codex are not yet supported here;
+> on those tools enforcement is best-effort until that is verified.
 
 ## Configuration
 
-Create a default config:
-
 ```bash
-scopediff init
+scopediff init   # writes scopediff.yml
 ```
 
 ScopeDiff reads `scopediff.yml` from the current project.
 
+## Exit codes
+
+- `0`: passed
+- `1`: blocked by findings at or above the configured `fail_on` (default: HIGH)
+- `2`: runtime or config error
+
 ## Privacy
 
-ScopeDiff runs locally by default.
-
-Your code, diffs, and task context are not uploaded. No API key is required. No LLM is used in v0.1.
+ScopeDiff runs locally. Your code, diffs, and task context are not uploaded. No
+API key is required. No LLM is used — semantic judgment, when needed, is left to
+the coding agent already in your editor.
 
 ## Roadmap
 
-- v0.1: CLI, local rules, config, Scope Mode, Risk Mode, Cursor/Codex/Claude Code Agent Pack
-- v0.2: GitHub Action, more rules, better agent docs, improved Chinese support
-- v0.3: MCP server, optional BYOK LLM, local LLM experiments
-- v1.0: PR bot, team policies, dashboard, private repo CI pricing
+- v0.1: CLI, local rules, config, Risk Mode, Agent Pack
+- v0.2: declared-intent scope engine, Claude Code Stop hook, honest agent docs
+- v0.2.x: verify Cursor/Codex hooks, file-level scope precision, more rules
+- v1.0: PR bot, team policies, dashboard
 
 ## License
 

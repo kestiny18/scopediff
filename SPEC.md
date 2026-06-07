@@ -327,6 +327,87 @@ LLM is used in v0.1.
 ## Roadmap
 
 - v0.1: CLI, local rules, `scopediff.yml`, Scope Mode, Risk Mode, Agent Pack
-- v0.2: GitHub Action, better Agent Pack, more rules, better Chinese support
-- v0.3: MCP server, optional BYOK LLM, Ollama/local LLM experiment
+- v0.2: declared-intent scope engine, Claude Code Stop hook, honest agent docs
+- v0.2.x: verify Cursor/Codex hooks, file-level scope precision, more rules
 - v1.0: PR bot, team policies, dashboard
+
+---
+
+# v0.2 Addendum: Declared Intent
+
+v0.2 shifts the primary model from *inferring* task scope (keyword guessing) to
+*declaring* it. This addendum supersedes the keyword-centric parts of the v0.1
+spec above where they conflict.
+
+## Principle
+
+ScopeDiff is an attention router, not an intent judge. **Trust over coverage:**
+only deterministic facts block; inferred/heuristic findings never block.
+
+## Declaration: `.scopediff/intent.json`
+
+Written (typically by the coding agent during planning) via:
+
+```bash
+scopediff intent --task "<task>" --allow "<glob>" [--allow ...] [--deny ...] [--rationale "..."]
+```
+
+Shape:
+
+```json
+{
+  "version": 1,
+  "task": "fix login empty password returns 400",
+  "allow": ["src/auth/**"],
+  "deny": [],
+  "rationale": "optional",
+  "createdAt": "ISO-8601"
+}
+```
+
+Loading: a missing file falls back to keyword/risk mode; a present-but-malformed
+file is a config error (exit 2) — it is not silently ignored. Granularity in
+v0.2 is directory/glob level; file-level precision is deferred to v0.2.x.
+
+## Resolution order
+
+1. `.scopediff/intent.json` present → **declared scope** is authoritative.
+2. Otherwise prompt/prompt-file/commit/branch context → keyword **fallback**
+   (heuristic, never blocks).
+3. Otherwise → **risk mode** (deterministic danger tripwires only).
+
+## SD019 — declared-vs-actual
+
+Active only when a declaration exists. For each changed file not covered by
+`allow` (and not excluded by `deny`), and not a test file:
+
+| Undeclared file | Severity | Blocks |
+| --- | --- | --- |
+| High-risk category (dependency/lockfile/migration/CI/secret) | HIGH | yes |
+| Ordinary source file | MEDIUM | no |
+| Docs file | INFO | no |
+
+Declared files and test files produce no scope finding.
+
+## Rule deferral under declared scope
+
+When a declaration exists, the keyword/heuristic scope rules defer to SD019 to
+avoid duplicate or noisy findings: **SD001–SD005, SD008, SD009, SD014** return
+nothing. Intent-independent fact rules (SD006 test deletion, SD007 large
+deletion, SD010–SD012, SD016–SD018) are unchanged. Without a declaration,
+v0.1 behavior is preserved (with the v0.1.2 trust fixes below).
+
+## v0.1.2 trust fixes
+
+- Context-required HIGH rules (SD001–SD004) require ≥ medium confidence, so a
+  generic branch-name fallback (e.g. `main`) no longer yields false HIGH.
+- Path domain detection uses camelCase-aware whole-token matching, fixing
+  substring false positives (`authors/` → auth, `reorder` → order).
+
+## Execution tiers
+
+- **Claude Code**: hard execution. `scopediff init claude` installs a `Stop`
+  hook running `scopediff check --hook`, which (only on blocking findings)
+  emits `{"decision":"block", ...}` so the agent is sent back before finishing.
+- **Cursor / Codex**: soft / best-effort via `.cursor/rules` and `AGENTS.md`.
+  Deterministic hooks for these tools are not yet verified.
