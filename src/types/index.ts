@@ -37,10 +37,27 @@ export type Finding = {
   blocking: boolean;
 };
 
+// Declared task scope, written (typically by the coding agent during planning)
+// to .scopediff/intent.json. When present it is the authoritative source for
+// "was this change in scope?", replacing keyword inference.
+export type Intent = {
+  version: 1;
+  task: string;
+  allow: string[];
+  deny: string[];
+  rationale?: string;
+  createdAt?: string;
+};
+
 export type AnalysisResult = {
   version: string;
   mode: Mode;
   context: TaskContext;
+  intent?: {
+    task: string;
+    allow: string[];
+    deny: string[];
+  };
   summary: {
     high: number;
     medium: number;

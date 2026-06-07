@@ -1,8 +1,14 @@
 import { isEnvSecretFile } from "../analyze/classifyFile.js";
 import { finding, type Rule } from "./ruleTypes.js";
 
-export const sd005EnvSecretChanged: Rule = (input) =>
-  input.files
+export const sd005EnvSecretChanged: Rule = (input) => {
+  // With a declared scope, SD019 covers undeclared secret files (HIGH) and a
+  // declared secret path is expected, so no separate env warning is emitted.
+  if (input.intent) {
+    return [];
+  }
+
+  return input.files
     .filter((file) => isEnvSecretFile(file.path))
     .map((file) =>
       finding(
@@ -13,3 +19,4 @@ export const sd005EnvSecretChanged: Rule = (input) =>
         file.path
       )
     );
+};

@@ -1,6 +1,7 @@
 import type {
   AnalysisResult,
   ChangedFile,
+  Intent,
   Mode,
   ScopeDiffConfig,
   Severity,
@@ -16,6 +17,7 @@ export type AnalyzeDiffOptions = {
   context: TaskContext;
   config: ScopeDiffConfig;
   failOn?: Severity[];
+  intent?: Intent;
 };
 
 export function analyzeDiff(options: AnalyzeDiffOptions): AnalysisResult {
@@ -23,7 +25,10 @@ export function analyzeDiff(options: AnalyzeDiffOptions): AnalysisResult {
     .filter((file) => !isIgnoredPath(file.path, options.config))
     .map((file) => classifyFile(file, options.config));
 
-  const mode: Mode = options.context.confidence === "none" ? "risk-only" : "scope";
+  // A declared intent is itself authoritative scope context, so the analysis
+  // runs in scope mode regardless of prompt confidence.
+  const mode: Mode =
+    options.intent || options.context.confidence !== "none" ? "scope" : "risk-only";
   const changedLines = countChangedLines(files);
   const failOn = options.failOn ?? options.config.risk.fail_on;
 
@@ -34,7 +39,8 @@ export function analyzeDiff(options: AnalyzeDiffOptions): AnalysisResult {
         context: options.context,
         config: options.config,
         mode,
-        changedLines
+        changedLines,
+        intent: options.intent
       })
     ),
     failOn
@@ -54,6 +60,13 @@ export function analyzeDiff(options: AnalyzeDiffOptions): AnalysisResult {
     version: VERSION,
     mode,
     context: options.context,
+    intent: options.intent
+      ? {
+          task: options.intent.task,
+          allow: options.intent.allow,
+          deny: options.intent.deny
+        }
+      : undefined,
     summary,
     findings,
     result: {

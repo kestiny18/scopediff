@@ -17,6 +17,7 @@ import { sd015LowContextConfidence } from "./sd015LowContextConfidence.js";
 import { sd016RiskOnlyMode } from "./sd016RiskOnlyMode.js";
 import { sd017TestUpdated } from "./sd017TestUpdated.js";
 import { sd018DocsOnlyChange } from "./sd018DocsOnlyChange.js";
+import { sd019OutOfDeclaredScope } from "./sd019OutOfDeclaredScope.js";
 import type { Rule, RuleInput } from "./ruleTypes.js";
 
 const rules: Rule[] = [
@@ -37,7 +38,8 @@ const rules: Rule[] = [
   sd015LowContextConfidence,
   sd016RiskOnlyMode,
   sd017TestUpdated,
-  sd018DocsOnlyChange
+  sd018DocsOnlyChange,
+  sd019OutOfDeclaredScope
 ];
 
 export function runRules(input: RuleInput): Finding[] {

@@ -1,23 +1,26 @@
 import { domainKeywords } from "../context/keywordMap.js";
 
 export function detectDomains(filePath: string): string[] {
-  const normalized = normalizePath(filePath).toLowerCase();
+  const normalized = normalizePath(filePath);
+  const lowerPath = normalized.toLowerCase();
+  // Tokenize from the original-case path so camelCase boundaries survive
+  // (e.g. "LoginController" -> login, controller) before lowercasing.
+  const tokens = new Set(tokenizePath(normalized));
   const domains = new Set<string>();
 
   for (const [domain, keywords] of Object.entries(domainKeywords)) {
     for (const keyword of keywords) {
-      const lowerKeyword = keyword.toLowerCase();
-      if (containsPathTerm(normalized, lowerKeyword)) {
+      if (containsPathTerm(tokens, lowerPath, keyword.toLowerCase())) {
         domains.add(domain);
       }
     }
   }
 
-  if (containsPathTerm(normalized, "test") || containsPathTerm(normalized, "spec")) {
+  if (containsPathTerm(tokens, lowerPath, "test") || containsPathTerm(tokens, lowerPath, "spec")) {
     domains.add("test");
   }
 
-  if (normalized.endsWith(".md") || normalized.endsWith(".mdx") || normalized.startsWith("docs/")) {
+  if (lowerPath.endsWith(".md") || lowerPath.endsWith(".mdx") || lowerPath.startsWith("docs/")) {
     domains.add("docs");
   }
 
@@ -28,15 +31,22 @@ export function normalizePath(filePath: string): string {
   return filePath.replace(/\\/g, "/").replace(/^\.\//, "");
 }
 
-function containsPathTerm(filePath: string, term: string): boolean {
+function containsPathTerm(tokens: Set<string>, lowerPath: string, term: string): boolean {
+  // CJK keywords have no token boundaries, so fall back to substring matching.
   if (/[\u3400-\u9fff]/.test(term)) {
-    return filePath.includes(term);
+    return lowerPath.includes(term);
   }
 
-  const tokens = filePath.split(/[^a-z0-9]+/).filter(Boolean);
-  if (term.length <= 2) {
-    return tokens.includes(term);
-  }
+  // Whole-token match only. Substring matching produced false positives such as
+  // "authors/" -> auth and "reorder.ts" -> order. camelCase-aware tokens keep
+  // recall (e.g. "LoginController" -> login).
+  return tokens.has(term);
+}
 
-  return filePath.includes(term);
+function tokenizePath(filePath: string): string[] {
+  return filePath
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
 }

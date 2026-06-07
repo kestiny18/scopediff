@@ -17,6 +17,15 @@ export function textReporter(result: AnalysisResult, options: TextReporterOption
   lines.push("Mode:");
   lines.push(`  ${result.mode}`);
   lines.push("");
+  if (result.intent) {
+    lines.push("Declared scope:");
+    lines.push(`  task: ${result.intent.task}`);
+    lines.push(`  allow: ${result.intent.allow.join(", ")}`);
+    if (result.intent.deny.length > 0) {
+      lines.push(`  deny: ${result.intent.deny.join(", ")}`);
+    }
+    lines.push("");
+  }
   lines.push("Context:");
   lines.push(`  source: ${result.context.source}`);
   if (result.context.path) {

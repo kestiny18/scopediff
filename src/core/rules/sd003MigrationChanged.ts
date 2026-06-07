@@ -1,8 +1,11 @@
 import { isMigrationFile } from "../analyze/classifyFile.js";
-import { contextMentions, finding, hasContext, type Rule } from "./ruleTypes.js";
+import { contextMentions, finding, hasConfidentContext, type Rule } from "./ruleTypes.js";
 
 export const sd003MigrationChanged: Rule = (input) => {
-  if (!hasContext(input) || contextMentions(input, "database")) {
+  if (input.intent) {
+    return [];
+  }
+  if (!hasConfidentContext(input) || contextMentions(input, "database")) {
     return [];
   }
 

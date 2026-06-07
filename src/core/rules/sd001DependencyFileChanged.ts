@@ -1,8 +1,12 @@
 import { isDependencyBuildFile } from "../analyze/classifyFile.js";
-import { contextMentions, finding, hasContext, type Rule } from "./ruleTypes.js";
+import { contextMentions, finding, hasConfidentContext, type Rule } from "./ruleTypes.js";
 
 export const sd001DependencyFileChanged: Rule = (input) => {
-  if (!hasContext(input) || contextMentions(input, "dependency")) {
+  // Superseded by SD019 (declared-vs-actual) when an intent declaration exists.
+  if (input.intent) {
+    return [];
+  }
+  if (!hasConfidentContext(input) || contextMentions(input, "dependency")) {
     return [];
   }
 

@@ -10,6 +10,10 @@ import { finding, hasContext, type Rule } from "./ruleTypes.js";
 const nonScopeDomains = new Set(["test"]);
 
 export const sd008OutOfScopeModule: Rule = (input) => {
+  // Superseded by SD019 (declared-vs-actual) when an intent declaration exists.
+  if (input.intent) {
+    return [];
+  }
   if (!hasContext(input) || input.context.domains.length === 0) {
     return [];
   }

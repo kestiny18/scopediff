@@ -1,8 +1,11 @@
 import { isLockfile } from "../analyze/classifyFile.js";
-import { contextMentions, finding, hasContext, type Rule } from "./ruleTypes.js";
+import { contextMentions, finding, hasConfidentContext, type Rule } from "./ruleTypes.js";
 
 export const sd002LockfileChanged: Rule = (input) => {
-  if (!hasContext(input) || contextMentions(input, "dependency")) {
+  if (input.intent) {
+    return [];
+  }
+  if (!hasConfidentContext(input) || contextMentions(input, "dependency")) {
     return [];
   }
 

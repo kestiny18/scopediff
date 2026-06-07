@@ -1,8 +1,14 @@
 import { isSensitivePath } from "../analyze/classifyFile.js";
 import { finding, type Rule } from "./ruleTypes.js";
 
-export const sd014SensitivePathChanged: Rule = (input) =>
-  input.files
+export const sd014SensitivePathChanged: Rule = (input) => {
+  // When scope is declared, SD019 already covers undeclared sensitive paths and
+  // declared ones are expected, so this path-based heuristic is redundant noise.
+  if (input.intent) {
+    return [];
+  }
+
+  return input.files
     .filter((file) => {
       if (!isSensitivePath(file.path, input.config)) {
         return false;
@@ -27,3 +33,4 @@ export const sd014SensitivePathChanged: Rule = (input) =>
         file.path
       )
     );
+};

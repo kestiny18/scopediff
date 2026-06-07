@@ -2,6 +2,11 @@ import { broadChangeKeywords } from "../context/keywordMap.js";
 import { contextHasIntent, finding, type Rule } from "./ruleTypes.js";
 
 export const sd009CrossDomainChanges: Rule = (input) => {
+  // Keyword-domain breadth is a guess; a declared scope (SD019) supersedes it.
+  if (input.intent) {
+    return [];
+  }
+
   const domains = new Set<string>();
 
   for (const file of input.files) {

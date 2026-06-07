@@ -3,6 +3,7 @@ import { analyzeDiff } from "../../core/analyze/analyzeDiff.js";
 import { loadConfig } from "../../core/config/loadConfig.js";
 import { resolveContext } from "../../core/context/resolveContext.js";
 import { getDiff } from "../../core/git/getDiff.js";
+import { loadIntent } from "../../core/intent/loadIntent.js";
 import { jsonReporter } from "../../core/report/jsonReporter.js";
 import { textReporter } from "../../core/report/textReporter.js";
 
@@ -29,6 +30,7 @@ export function runCheck(cwd: string, options: CheckCommandOptions): number {
     prompt: options.prompt,
     promptFile: options.promptFile
   });
+  const loadedIntent = loadIntent(cwd);
   const diffText = getDiff({
     cwd,
     staged: options.staged,
@@ -38,6 +40,7 @@ export function runCheck(cwd: string, options: CheckCommandOptions): number {
     diffText,
     context,
     config,
+    intent: loadedIntent?.intent,
     failOn: options.failOn ? failOnThreshold(options.failOn) : undefined
   });
 
