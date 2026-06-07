@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { installClaudeStopHook } from "./claudeHook.js";
 import { cursorRule, codexSection, claudeSection } from "./templates.js";
 
 export type AgentTarget = "cursor" | "codex" | "claude";
@@ -20,8 +21,15 @@ export function initAgent(cwd: string, target: AgentTarget): InitAgentResult {
       );
     case "codex":
       return upsertFile(path.join(cwd, "AGENTS.md"), codexSection, "# ScopeDiff");
-    case "claude":
-      return upsertFile(path.join(cwd, "CLAUDE.md"), claudeSection, "# ScopeDiff");
+    case "claude": {
+      const doc = upsertFile(path.join(cwd, "CLAUDE.md"), claudeSection, "# ScopeDiff");
+      const hook = installClaudeStopHook(cwd);
+      return {
+        path: doc.path,
+        changed: doc.changed || hook.changed,
+        message: `${doc.message}\n${hook.message}`
+      };
+    }
   }
 }
 

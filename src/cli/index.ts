@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { Command } from "commander";
 import { runCheck } from "./commands/check.js";
 import { runInit } from "./commands/init.js";
+import { runIntent } from "./commands/intent.js";
 
 const require = createRequire(import.meta.url);
 const packageJson = require("../../package.json") as { version: string };
@@ -26,6 +27,7 @@ program
   .option("--fail-on <level>", "override blocking level: high, medium, or info")
   .option("--no-color", "disable color")
   .option("--verbose", "print extra detail")
+  .option("--hook", "Claude Code Stop-hook mode: emit a block decision as JSON on blocking findings")
   .action((options) => {
     try {
       process.exitCode = runCheck(process.cwd(), options);
@@ -47,7 +49,27 @@ program
     }
   });
 
+program
+  .command("intent")
+  .description("Declare the scope of the current task to .scopediff/intent.json.")
+  .requiredOption("--task <text>", "task description")
+  .option("--allow <glob>", "path/glob allowed to change (repeatable)", collect, [])
+  .option("--deny <glob>", "path/glob that must not change (repeatable)", collect, [])
+  .option("--rationale <text>", "optional rationale for the declared scope")
+  .action((options) => {
+    try {
+      process.exitCode = runIntent(process.cwd(), options);
+    } catch (error) {
+      process.stderr.write(`${formatError(error)}\n`);
+      process.exitCode = 2;
+    }
+  });
+
 program.parse();
+
+function collect(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
 
 function formatError(error: unknown): string {
   if (error instanceof Error) {
