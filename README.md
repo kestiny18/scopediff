@@ -1,5 +1,11 @@
 # ScopeDiff
 
+[![npm](https://img.shields.io/npm/v/@scopediff-dev/cli.svg)](https://www.npmjs.com/package/@scopediff-dev/cli)
+[![CI](https://github.com/kestiny18/scopediff/actions/workflows/ci.yml/badge.svg)](https://github.com/kestiny18/scopediff/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@scopediff-dev/cli.svg)](LICENSE)
+
+> Status: early (v0.2). Useful today; the CLI surface and rules may still change.
+
 Let AI write code without letting it rewrite your project.
 
 ScopeDiff reports when AI-generated code changes drift outside the scope a task
@@ -31,6 +37,20 @@ Fuzzy, inferred findings are surfaced for review but never block.
 AI coding agents are useful, but they drift: touching unrelated modules,
 changing dependencies, deleting tests, or rewriting build files while solving a
 narrow task. ScopeDiff catches that drift before you finish a task or open a PR.
+
+## Installation
+
+Requires **Node.js ≥ 20** and **git**.
+
+```bash
+npm install -g @scopediff-dev/cli
+```
+
+Or run without installing:
+
+```bash
+npx @scopediff-dev/cli check
+```
 
 ## Declared scope (recommended)
 
@@ -140,6 +160,11 @@ ScopeDiff reads `scopediff.yml` from the current project.
 - `1`: blocked by findings at or above the configured `fail_on` (default: HIGH)
 - `2`: runtime or config error
 
+## Rules
+
+Findings carry an ID (`SD001`–`SD019`). The full rule list, severities, and the
+declared-intent model are documented in [SPEC.md](SPEC.md).
+
 ## Privacy
 
 ScopeDiff runs locally. Your code, diffs, and task context are not uploaded. No
@@ -152,6 +177,20 @@ the coding agent already in your editor.
 - v0.2: declared-intent scope engine, Claude Code Stop hook, honest agent docs
 - v0.2.x: verify Cursor/Codex hooks, file-level scope precision, more rules
 - v1.0: PR bot, team policies, dashboard
+
+## Contributing
+
+Issues and PRs are welcome. Local setup:
+
+```bash
+git clone https://github.com/kestiny18/scopediff.git
+cd scopediff
+npm install
+npm run check   # build + tests
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for project layout and how rules are
+structured.
 
 ## License
 

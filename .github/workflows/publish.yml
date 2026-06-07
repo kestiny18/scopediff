@@ -1,0 +1,47 @@
+name: Publish
+
+# Publishes to npm when a version tag (e.g. v0.2.0) is pushed.
+#
+# Uses npm "trusted publishing" via GitHub OIDC: no NPM_TOKEN secret is needed.
+# One-time setup on npmjs.com: package settings -> "Trusted Publisher" ->
+# point it at this repo and the "Publish" workflow. Until that is configured,
+# this job will fail safely without publishing anything.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC trusted publishing + provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME#v}"
+          if [ "$PKG" != "$TAG" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG"
+            exit 1
+          fi
+
+      - run: npm run check
+
+      # Trusted publishing requires a recent npm.
+      - run: npm install -g npm@latest
+
+      - run: npm publish --provenance --access public
